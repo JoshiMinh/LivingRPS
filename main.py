@@ -17,7 +17,7 @@ from pygame.locals import (
 pygame.init()
 
 def clear(window):
-    window.fill((255, 255, 255))
+    window.fill((0, 0, 0))
 
 def update(x, y, plus_x, plus_y):
     return (x+plus_x, y+plus_y)
@@ -50,7 +50,7 @@ def update_player(player_color, player_coords, player_velocity, scr_h, scr_w):
 
 # Set up the drawing window
 
-move_speed = 5
+move_speed = 3
 screen_height = 1000
 screen_width = 750
 screen_size = (screen_width, screen_height + screen_height // 10)
@@ -58,7 +58,7 @@ quarter_height = screen_height//4
 quarter_width = screen_width//4
 coords = (quarter_height * 2, quarter_width * 2)
 frames_per_second = 50
-player_count = 3
+player_count = 20
 max_velo = 5
 max_accel = 2
 radius = 15
@@ -133,9 +133,9 @@ while going:
         time.sleep(1/frames_per_second)
         clear(screen)
 
-    screen.blit(font.render('Game Over! Current Records:', True, (0, 0, 0)), dest=(screen_width//10,4*screen_height//10))
-    screen.blit(font.render('Rock: ' + str(wins[0]) + ' Paper: ' + str(wins[2]) + ' Scissors: ' + str(wins[1]), True, (0, 0, 0)), dest=(screen_width//10,5*screen_height//10))
-    screen.blit(font.render('Press Escape to Exit, Press any other key to go again', True, (0, 0, 0)), dest=(screen_width//10,6*screen_height//10))
+    screen.blit(font.render('Game Over! Current Records:', True, (255, 255, 255)), dest=(screen_width//10,4*screen_height//10))
+    screen.blit(font.render('Rock: ' + str(wins[0]) + ' Paper: ' + str(wins[2]) + ' Scissors: ' + str(wins[1]), True, (255, 255, 255)), dest=(screen_width//10,5*screen_height//10))
+    screen.blit(font.render('Press Escape to Exit, Press any other key to go again', True, (255, 255, 255)), dest=(screen_width//10,6*screen_height//10))
     pygame.display.flip()
     waiting = True
     while waiting:
