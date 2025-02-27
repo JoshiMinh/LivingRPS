@@ -76,7 +76,7 @@ while going:
             players.append(mover.Mover(t, coords, velocity, accel, screen_width, screen_height, max_velo, max_accel))
     
     running = True
-    while running:
+    while True:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 running = False
@@ -132,18 +132,34 @@ while going:
         pygame.display.flip()
         time.sleep(1 / frames_per_second)
         clear(screen)
+        if running:
+            pass
+        else:
+            while not running:
+                clear(screen)
+                screen.blit(font.render('Game Over!', True, (255, 255, 255)), dest=(screen_width // 10, 4 * screen_height // 10))
+                screen.blit(font.render(f'Rock: {wins[0]} Paper: {wins[2]} Scissors: {wins[1]}', True, (255, 255, 255)), dest=(screen_width // 10, 5 * screen_height // 10))
+                screen.blit(font.render('Press ESC to Exit, Press any key to rerun', True, (255, 255, 255)), dest=(screen_width // 10, 6 * screen_height // 10))
+                pygame.display.flip()
 
-    screen.blit(font.render('Game Over!', True, (255, 255, 255)), dest=(screen_width // 10, 4 * screen_height // 10))
-    screen.blit(font.render(f'Rock: {wins[0]} Paper: {wins[2]} Scissors: {wins[1]}', True, (255, 255, 255)), dest=(screen_width // 10, 5 * screen_height // 10))
-    screen.blit(font.render('Press ESC to Exit, Press any key to rerun', True, (255, 255, 255)), dest=(screen_width // 10, 6 * screen_height // 10))
-    pygame.display.flip()
+                pygame.event.clear()  # Clears old key events
 
-    waiting = True
-    while waiting:
-        for event in pygame.event.get():
-            if event.type == QUIT or event.type == KEYDOWN:
-                waiting = False
-            if event.type == KEYDOWN and event.key == K_ESCAPE:
-                going = False
+                waiting = True
+                while waiting:
+                    for event in pygame.event.get():
+                        if event.type == QUIT:
+                            going = False
+                            waiting = False
+                        elif event.type == KEYDOWN:
+                            if event.key == K_ESCAPE:
+                                going = False
+                                waiting = False
+                            else:
+                                waiting = False  # Restart game if any key (except ESC) is pressed
 
+
+
+
+
+    
 pygame.quit()
