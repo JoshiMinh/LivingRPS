@@ -1,9 +1,9 @@
-# ![icon](icon.ico) LivingRPS  
+<img src="icon.ico" alt="icon" width="50">
 
-## How to Run  
-Double-click **RunGame.exe** to start the game.  
+# LivingRPS
 
-## About  
-This repository is a fork of [ethan-schaffer/LivingRPS](https://github.com/ethan-schaffer/LivingRPS) with improvements. It is not the original version.  
+Double-click **RunGame.exe** to start.
 
-![Demo](demo.png)  
+<img src="demo.png" alt="Demo">
+
+This is a fork of [ethan-schaffer/LivingRPS](https://github.com/ethan-schaffer/LivingRPS) with improvements. It is not the original version.
