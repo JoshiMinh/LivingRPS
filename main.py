@@ -8,7 +8,7 @@ from pygame.locals import K_UP, K_DOWN, K_ESCAPE, KEYDOWN, QUIT
 pygame.mixer.init()
 pygame.init()
 
-icon = pygame.image.load("icon.png")
+icon = pygame.image.load("images/icon.png")
 pygame.display.set_icon(icon)
 pygame.display.set_caption("LivingRPS")
 
@@ -31,15 +31,15 @@ max_velo = 5
 max_accel = 2
 radius = 15
 
-rockHit = pygame.mixer.Sound("rock.mp3")
-scissorsHit = pygame.mixer.Sound("scissors.mp3")
-paperHit = pygame.mixer.Sound("paper.mp3")
+rockHit = pygame.mixer.Sound("audio/rock.mp3")
+scissorsHit = pygame.mixer.Sound("audio/scissors.mp3")
+paperHit = pygame.mixer.Sound("audio/paper.mp3")
 
 font = pygame.font.Font(pygame.font.get_default_font(), 18)
 
-rock = pygame.image.load("rock.png")
-scissors = pygame.image.load("scissors.png")
-paper = pygame.image.load("paper.png")
+rock = pygame.image.load("images/rock.png")
+scissors = pygame.image.load("images/scissors.png")
+paper = pygame.image.load("images/paper.png")
 
 rock = pygame.transform.scale(rock, (radius * 2, radius * 2))
 paper = pygame.transform.scale(paper, (radius * 2, radius * 2))
