@@ -8,125 +8,106 @@ from pygame.locals import K_UP, K_DOWN, K_ESCAPE, KEYDOWN, QUIT
 pygame.mixer.init()
 pygame.init()
 
-icon = pygame.image.load("images/icon.png")
-pygame.display.set_icon(icon)
+pygame.display.set_icon(pygame.image.load("images/icon.png"))
 pygame.display.set_caption("LivingRPS")
 
-def clear(window):
-    window.fill((0, 0, 0))
-
-def trim(v, upper, lower):
-    return max(min(v, upper), lower)
-
-def handle_bounds(x, y, x_bound, y_bound):
-    return trim(x, x_bound, 0), trim(y, y_bound, 0)
-
-move_speed = 3
-screen_height = 750
-screen_width = 750
-screen_size = (screen_width, screen_height + screen_height // 10)
-frames_per_second = 50
-player_count = 20
-max_velo = 5
-max_accel = 2
-radius = 15
-
-rockHit = pygame.mixer.Sound("audio/rock.mp3")
-scissorsHit = pygame.mixer.Sound("audio/scissors.mp3")
-paperHit = pygame.mixer.Sound("audio/paper.mp3")
-
+screen_size = (750, 750)
+screen = pygame.display.set_mode(screen_size)
 font = pygame.font.Font(pygame.font.get_default_font(), 18)
 
-rock = pygame.image.load("images/rock.png")
-scissors = pygame.image.load("images/scissors.png")
-paper = pygame.image.load("images/paper.png")
+rock_hit = pygame.mixer.Sound("audio/rock.mp3")
+scissors_hit = pygame.mixer.Sound("audio/scissors.mp3")
+paper_hit = pygame.mixer.Sound("audio/paper.mp3")
 
-rock = pygame.transform.scale(rock, (radius * 2, radius * 2))
-paper = pygame.transform.scale(paper, (radius * 2, radius * 2))
-scissors = pygame.transform.scale(scissors, (radius * 2, radius * 2))
+radius = 15
+choices = [
+    pygame.transform.scale(pygame.image.load("images/rock.png"), (radius * 2, radius * 2)),
+    pygame.transform.scale(pygame.image.load("images/scissors.png"), (radius * 2, radius * 2)),
+    pygame.transform.scale(pygame.image.load("images/paper.png"), (radius * 2, radius * 2)),
+]
 
-choices = [rock, scissors, paper]
-screen = pygame.display.set_mode([screen_width, screen_height])
+def clear():
+    screen.fill((0, 0, 0))
 
-wins = [0, 0, 0]
-going = True
-
-while going:
+def create_players(player_count, screen_width, screen_height, max_velo, max_accel):
     players = []
+    quarter_h, quarter_w = screen_height // 4, screen_width // 4
     for t in range(3):
         for _ in range(player_count):
-            coords = (random.randint(radius, screen_width - radius), random.randint(radius, screen_height - radius))
-            velocity = (random.randint(-max_velo, max_velo), random.randint(-max_velo, max_velo))
-            accel = (random.randint(-max_accel, max_accel), random.randint(-max_accel, max_accel))
-            players.append(mover.Mover(t, coords, velocity, accel, screen_width, screen_height, max_velo, max_accel))
+            players.append(mover.Mover(
+                t,
+                (random.randint(quarter_h, 3 * quarter_h), random.randint(quarter_w, 3 * quarter_w)),
+                (random.randint(-max_velo, max_velo), random.randint(-max_velo, max_velo)),
+                (random.randint(-max_accel, max_accel), random.randint(-max_accel, max_accel)),
+                screen_width, screen_height, max_velo, max_accel
+            ))
+    return players
+
+def handle_collisions(players, visited, positions, totals):
+    for player in players:
+        for i, pos in enumerate(positions):
+            if (pos[0] - player.get_position()[0]) ** 2 + (pos[1] - player.get_position()[1]) ** 2 < (radius * 2) ** 2:
+                current, collided = player.get_color(), visited[i].get_color()
+                if current == 2 and collided == 1:
+                    scissors_hit.play()
+                    player.update_color(1)
+                elif current == 0 and collided == 2:
+                    paper_hit.play()
+                    player.update_color(2)
+                elif current == 1 and collided == 0:
+                    rock_hit.play()
+                    player.update_color(0)
+                visited[i].update_color(player.get_color())
+        visited.append(player)
+        positions.append(player.get_position())
+        totals[player.get_color()] += 1
+    return visited, totals
+
+def game_loop():
+    player_count, max_velo, max_accel, fps = 20, 5, 2, 60
+    screen_width, screen_height = 750, 750
+    wins = [0, 0, 0]
+    going = True
     
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                going = False
-                running = False
-
-        visited = []
-        positions = []
-        totals = [0, 0, 0]
-
-        for player in players:
-            player.update_position()
-
-        for player in players:
-            for index in range(len(positions)):
-                distance = (positions[index][0] - player.get_position()[0]) ** 2 + (positions[index][1] - player.get_position()[1]) ** 2
-                if distance < (radius * 2) ** 2:
-                    current_color = player.get_color()
-                    collided_color = visited[index].get_color()
-
-                    if current_color == 2 and collided_color == 1:
-                        scissorsHit.play()
-                        player.update_color(1)
-                    elif current_color == 0 and collided_color == 2:
-                        paperHit.play()
-                        player.update_color(2)
-                    elif current_color == 1 and collided_color == 0:
-                        rockHit.play()
-                        player.update_color(0)
-
-                    visited[index].update_color(player.get_color())
-
-            visited.append(player)
-            positions.append(player.get_position())
-            totals[player.get_color()] += 1
-
-        for i in range(3):
-            if totals[i] == player_count * 3:
-                wins[i] += 1
-                running = False
+    while going:
+        players = create_players(player_count, screen_width, screen_height, max_velo, max_accel)
+        running = True
         
-        players = visited
-
-        for player in players:
-            screen.blit(choices[player.get_color()], player.get_position())
-
+        while running:
+            for event in pygame.event.get():
+                if event.type in {QUIT, KEYDOWN} and (event.type == QUIT or event.key == K_ESCAPE):
+                    return
+                if event.type == KEYDOWN and event.key == K_UP:
+                    print(*players, sep="\n")
+                    while any(e.type != KEYDOWN or e.key != K_DOWN for e in pygame.event.get()):
+                        pass
+            
+            visited, positions, totals = [], [], [0, 0, 0]
+            for player in players:
+                player.update_position()
+            players, totals = handle_collisions(players, visited, positions, totals)
+            
+            if any(totals[i] == player_count * 3 for i in range(3)):
+                wins[totals.index(max(totals))] += 1
+                running = False
+            
+            for player in players:
+                screen.blit(choices[player.get_color()], player.get_position())
+            pygame.display.flip()
+            time.sleep(1 / fps)
+            clear()
+        
+        screen.blit(font.render('Game Over!', True, (255, 255, 255)), (75, 300))
+        screen.blit(font.render(f'Rock: {wins[0]} Paper: {wins[2]} Scissors: {wins[1]}', True, (255, 255, 255)), (75, 375))
+        screen.blit(font.render('Press ESC to Exit, Press any key to rerun', True, (255, 255, 255)), (75, 450))
         pygame.display.flip()
-        time.sleep(1 / frames_per_second)
-        clear(screen)
+        
+        while True:
+            event = pygame.event.wait()
+            if event.type in {QUIT, KEYDOWN}:
+                if event.type == KEYDOWN and event.key == K_ESCAPE:
+                    going = False
+                break
 
-    # Game Over Screen
-    clear(screen)
-    screen.blit(font.render('Game Over!', True, (255, 255, 255)), (screen_width // 10, 4 * screen_height // 10))
-    screen.blit(font.render(f'Rock: {wins[0]}  Paper: {wins[2]}  Scissors: {wins[1]}', True, (255, 255, 255)), (screen_width // 10, 5 * screen_height // 10))
-    screen.blit(font.render('Press ESC to Exit, Press any key to restart', True, (255, 255, 255)), (screen_width // 10, 6 * screen_height // 10))
-    pygame.display.flip()
-
-    waiting = True
-    while waiting:
-        event = pygame.event.wait()
-        if event.type == QUIT:
-            going = False
-            waiting = False
-        elif event.type == KEYDOWN:
-            if event.key == K_ESCAPE:
-                going = False
-            waiting = False
-
+game_loop()
 pygame.quit()

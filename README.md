@@ -1,6 +1,7 @@
-<img src="icon.ico" alt="icon" width="50">
-
-# LivingRPS
+<p align="left">
+  <img src="icon.ico" alt="icon" width="50px">
+  <h1 style="display: inline;">LivingRPS</h1>
+</p>
 
 Double-click **RunGame.exe** to start.
 
