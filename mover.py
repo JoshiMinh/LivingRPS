@@ -1,26 +1,15 @@
 import random
+import torch
 
 red = (255, 0, 0)
 green = (0, 255, 0)
 blue = (0, 0, 255)
 
 def trim(v, upper, lower):
-    if v > upper:
-        return upper
-    if v < lower:
-        return lower
-    return v
-
-def between_range(v, u):
-    p = v + u
-    m = u * 2
-    return random.randint(p // 2, (m + p) // 2) - u
-
-def abs(x):
-    return x if x > 0 else -x
+    return max(lower, min(v, upper))
 
 class Mover:
-    def __init__(self, thing, coords, v, a, max_height, max_width, max_velo, max_accel):
+    def __init__(self, thing, coords, v, a, max_height, max_width, max_velo, max_accel, ai_model=None):
         self.ticks = 0
         self.time = 0
         self.color = thing
@@ -31,6 +20,7 @@ class Mover:
         self.max_width = max_width
         self.max_velo = max_velo
         self.max_accel = max_accel
+        self.ai_model = ai_model
 
     def get_color(self):
         return self.color
@@ -39,46 +29,102 @@ class Mover:
         if (c, self.color) in [(0, 1), (1, 2), (2, 0)]:
             self.color = c
 
-    def get_x(self):
-        return self.coord_x
-
-    def get_y(self):
-        return self.coord_y
-
     def get_position(self):
         return self.coord_x, self.coord_y
 
-    def update_position(self):
+    def decide_acceleration(self, others):
+        my_type = self.color
+        if my_type == 0:
+            threat_type, prey_type = 2, 1
+        elif my_type == 1:
+            threat_type, prey_type = 0, 2
+        else:
+            threat_type, prey_type = 1, 0
+
+        nearest_threat = None
+        min_d_threat = float('inf')
+        nearest_prey = None
+        min_d_prey = float('inf')
+        px, py = self.coord_x, self.coord_y
+
+        for other in others:
+            if other is self:
+                continue
+            ox, oy = other.get_position()
+            d2 = (ox - px)**2 + (oy - py)**2
+            if other.get_color() == threat_type and d2 < min_d_threat:
+                min_d_threat = d2
+                nearest_threat = (ox, oy)
+            if other.get_color() == prey_type and d2 < min_d_prey:
+                min_d_prey = d2
+                nearest_prey = (ox, oy)
+
+        dx_t, dy_t, dist_t = 0.0, 0.0, 1.0
+        dx_p, dy_p, dist_p = 0.0, 0.0, 1.0
+        if nearest_threat:
+            dx_t = (nearest_threat[0] - px) / self.max_width
+            dy_t = (nearest_threat[1] - py) / self.max_height
+            dist_t = ((dx_t**2 + dy_t**2)**0.5)
+        if nearest_prey:
+            dx_p = (nearest_prey[0] - px) / self.max_width
+            dy_p = (nearest_prey[1] - py) / self.max_height
+            dist_p = ((dx_p**2 + dy_p**2)**0.5)
+
+        type_feat = [0.0, 0.0, 0.0]
+        type_feat[my_type] = 1.0
+
+        state_tensor = torch.tensor(
+            [dx_t, dy_t, dist_t, dx_p, dy_p, dist_p] + type_feat, dtype=torch.float
+        )
+
+        with torch.no_grad():
+            q_values = self.ai_model(state_tensor)
+        action = int(torch.argmax(q_values).item())
+
+        if action == 0 and nearest_prey:
+            tx, ty = nearest_prey
+            self.acceleration_x = self.max_accel * (tx - px) / self.max_width
+            self.acceleration_y = self.max_accel * (ty - py) / self.max_height
+        elif action == 1 and nearest_threat:
+            tx, ty = nearest_threat
+            self.acceleration_x = self.max_accel * (px - tx) / self.max_width
+            self.acceleration_y = self.max_accel * (py - ty) / self.max_height
+        else:
+            self.acceleration_x = random.uniform(-0.5, 0.5) * self.max_accel
+            self.acceleration_y = random.uniform(-0.5, 0.5) * self.max_accel
+
+    def update_position(self, others=None):
+        if self.ai_model and others is not None:
+            self.decide_acceleration(others)
+            self.ticks = 0
+        else:
+            self.ticks += 1
+            if self.ticks == 5:
+                self.time += 1
+                self.ticks = 0
+                target_x = random.randint(
+                    trim((self.time * self.max_width // 100), self.max_width // 4, 0),
+                    trim(self.max_width - (self.time * self.max_width // 100), self.max_width, 3 * self.max_width // 4))
+                vector_x = target_x - self.coord_x
+                self.acceleration_x = self.max_accel * vector_x / self.max_width
+
+                target_y = random.randint(
+                    trim((self.time * self.max_height // 100), self.max_height // 4, 0),
+                    trim(self.max_height - (self.time * self.max_height // 100), self.max_height, 3 * self.max_height // 4))
+                vector_y = target_y - self.coord_y
+                self.acceleration_y = self.max_accel * vector_y / self.max_height
+
         self.coord_x += self.velocity_x
         self.coord_y += self.velocity_y
-
         self.velocity_x += self.acceleration_x
         self.velocity_y += self.acceleration_y
 
-        self.ticks += 1
-        if self.ticks == 5:
-            self.time += 1
-            self.ticks = 0
-            target_x = random.randint(
-                trim((self.time * self.max_width // 100), self.max_width // 4, 0),
-                trim(self.max_width - (self.time * self.max_width // 100), self.max_width, 3 * self.max_width // 4))
-            vector_x = target_x - self.coord_x
-            self.acceleration_x = self.max_accel * vector_x / self.max_width
-
-            target_y = random.randint(
-                trim((self.time * self.max_height // 100), self.max_height // 4, 0),
-                trim(self.max_height - (self.time * self.max_height // 100), self.max_height, 3 * self.max_height // 4))
-            vector_y = target_y - self.coord_y
-            self.acceleration_y = self.max_accel * vector_y / self.max_height
-
         self.coord_x = trim(self.coord_x, self.max_width, 0)
         self.coord_y = trim(self.coord_y, self.max_height, 0)
-
         self.velocity_x = trim(self.velocity_x, self.max_velo, -self.max_velo)
         self.velocity_y = trim(self.velocity_y, self.max_velo, -self.max_velo)
-
         self.acceleration_x = trim(self.acceleration_x, self.max_accel, -self.max_accel)
         self.acceleration_y = trim(self.acceleration_y, self.max_accel, -self.max_accel)
 
     def __str__(self):
-        return "" + str(self.color) + " " + str(self.coord_x) + " " + str(self.coord_y)
+        return f"{self.color} {self.coord_x} {self.coord_y}"

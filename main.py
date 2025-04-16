@@ -1,9 +1,10 @@
 import pygame
-import pygame.freetype
 import random
 import time
 import mover
+import torch
 from pygame.locals import K_UP, K_DOWN, K_ESCAPE, KEYDOWN, QUIT
+from rps_agent_model import RPSAgentNet
 
 pygame.mixer.init()
 pygame.init()
@@ -63,6 +64,10 @@ def handle_collisions(players, visited, positions, totals):
         totals[player.get_color()] += 1
     return visited, totals
 
+model = RPSAgentNet()
+model.load_state_dict(torch.load("rps_agent_model.pth"))
+model.eval()
+
 def game_loop():
     player_count, max_velo, max_accel, fps = 20, 5, 2, 60
     screen_width, screen_height = 750, 750
@@ -71,6 +76,8 @@ def game_loop():
     
     while going:
         players = create_players(player_count, screen_width, screen_height, max_velo, max_accel)
+        for p in players:
+            p.ai_model = model
         running = True
         
         while running:
@@ -84,7 +91,7 @@ def game_loop():
             
             visited, positions, totals = [], [], [0, 0, 0]
             for player in players:
-                player.update_position()
+                player.update_position(players)
             players, totals = handle_collisions(players, visited, positions, totals)
             
             if any(totals[i] == player_count * 3 for i in range(3)):
