@@ -6,20 +6,21 @@ import torch
 from pygame.locals import K_UP, K_DOWN, K_ESCAPE, KEYDOWN, QUIT
 from rps_agent_model import RPSAgentNet
 
+# Initialize pygame and its mixer
 pygame.mixer.init()
 pygame.init()
 
+# Set up display and assets
 pygame.display.set_icon(pygame.image.load("images/icon.png"))
 pygame.display.set_caption("LivingRPS")
-
 screen_size = (750, 750)
 screen = pygame.display.set_mode(screen_size)
 font = pygame.font.Font(pygame.font.get_default_font(), 18)
 
+# Load audio and images
 rock_hit = pygame.mixer.Sound("audio/rock.mp3")
 scissors_hit = pygame.mixer.Sound("audio/scissors.mp3")
 paper_hit = pygame.mixer.Sound("audio/paper.mp3")
-
 radius = 15
 choices = [
     pygame.transform.scale(pygame.image.load("images/rock.png"), (radius * 2, radius * 2)),
@@ -27,13 +28,15 @@ choices = [
     pygame.transform.scale(pygame.image.load("images/paper.png"), (radius * 2, radius * 2)),
 ]
 
+# Clear the screen
 def clear():
     screen.fill((0, 0, 0))
 
+# Create players with random positions, velocities, and accelerations
 def create_players(player_count, screen_width, screen_height, max_velo, max_accel):
     players = []
     quarter_h, quarter_w = screen_height // 4, screen_width // 4
-    for t in range(3):
+    for t in range(3):  # Three types: Rock, Paper, Scissors
         for _ in range(player_count):
             players.append(mover.Mover(
                 t,
@@ -44,18 +47,19 @@ def create_players(player_count, screen_width, screen_height, max_velo, max_acce
             ))
     return players
 
+# Handle collisions and update player states
 def handle_collisions(players, visited, positions, totals):
     for player in players:
         for i, pos in enumerate(positions):
             if (pos[0] - player.get_position()[0]) ** 2 + (pos[1] - player.get_position()[1]) ** 2 < (radius * 2) ** 2:
                 current, collided = player.get_color(), visited[i].get_color()
-                if current == 2 and collided == 1:
+                if current == 2 and collided == 1:  # Paper beats Rock
                     scissors_hit.play()
                     player.update_color(1)
-                elif current == 0 and collided == 2:
+                elif current == 0 and collided == 2:  # Rock beats Scissors
                     paper_hit.play()
                     player.update_color(2)
-                elif current == 1 and collided == 0:
+                elif current == 1 and collided == 0:  # Scissors beats Paper
                     rock_hit.play()
                     player.update_color(0)
                 visited[i].update_color(player.get_color())
@@ -64,12 +68,14 @@ def handle_collisions(players, visited, positions, totals):
         totals[player.get_color()] += 1
     return visited, totals
 
+# Load the AI model
 model = RPSAgentNet()
 model.load_state_dict(torch.load("rps_agent_model.pth"))
 model.eval()
 
+# Main game loop
 def game_loop():
-    player_count, max_velo, max_accel, fps = 20, 5, 2, 60
+    player_count, max_velo, max_accel, fps = 15, 5, 2, 60
     screen_width, screen_height = 750, 750
     wins = [0, 0, 0]
     going = True
@@ -94,7 +100,7 @@ def game_loop():
                 player.update_position(players)
             players, totals = handle_collisions(players, visited, positions, totals)
             
-            if any(totals[i] == player_count * 3 for i in range(3)):
+            if any(totals[i] == player_count * 3 for i in range(3)):  # Check for a winner
                 wins[totals.index(max(totals))] += 1
                 running = False
             
@@ -104,6 +110,7 @@ def game_loop():
             time.sleep(1 / fps)
             clear()
         
+        # Display game over screen
         screen.blit(font.render('Game Over!', True, (255, 255, 255)), (75, 300))
         screen.blit(font.render(f'Rock: {wins[0]} Paper: {wins[2]} Scissors: {wins[1]}', True, (255, 255, 255)), (75, 375))
         screen.blit(font.render('Press ESC to Exit, Press any key to rerun', True, (255, 255, 255)), (75, 450))
