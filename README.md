@@ -1,33 +1,83 @@
 <h1 align="center">
-    <img src="icon.ico" alt="LivingRPS Icon" width="50">
-    <br>LivingRPS
+  <img src="assets/images/icon.png" alt="LivingRPS Icon" width="60"><br>
+  LivingRPS
 </h1>
 
-<p align="center">AI-integrated Rock-Paper-Scissors simulation game where each player is an AI (updated).</p>
+<p align="center">
+  AI-driven Rock-Paper-Scissors simulation — every entity on screen is a DQN agent hunting its prey and fleeing its predator.
+</p>
 
-## 1. Installation
+<p align="center">
+  <img src="demo.png" alt="Game Demo" width="600">
+</p>
 
-1. Ensure Python is installed on your system.
-2. Install the required libraries using the following command:
-    ```bash
-    pip install numpy pygame torch
-    ```
+---
 
-## 2. Training the Model (Optional)
+## Requirements
 
-If necessary, train the model by double-clicking `install.bat`, or by running:
-    ```bash
-    python train.py
-    ```
+- Python 3.9+
+- `numpy`, `pygame`, `torch`
 
-## 3. Running the Game
+Install all dependencies at once:
 
-- Double-click `run.bat`, or
-- Run the following command in your terminal:
-    ```bash
-    python main.py
-    ```
+```bash
+pip install -r requirements.txt
+```
 
-![Game Demo](demo.png)
+---
 
-> This project is a fork of [ethan-schaffer/LivingRPS](https://github.com/ethan-schaffer/LivingRPS) with enhancements and improvements. It is not the original version.
+## Running
+
+**One-click (Windows):** double-click `run.bat` — it checks for Python, installs dependencies if needed, trains the model if weights are missing, then launches the game.
+
+**Manual:**
+
+```bash
+python main.py
+```
+
+---
+
+## Training (optional)
+
+The pre-trained model is included in `models/rps_agent.pth`. To retrain from scratch:
+
+```bash
+python train.py
+```
+
+Training runs 1 000 DQN episodes and saves the new weights to `models/rps_agent.pth`.
+
+---
+
+## Controls
+
+| Key | Action |
+|-----|--------|
+| `ESC` | Quit |
+| `↑` | Print entity states to console |
+| `↓` | Resume (after `↑`) |
+| Any key (Game Over screen) | Restart |
+
+---
+
+## Project Structure
+
+```
+LivingRPS/
+├── assets/
+│   ├── audio/          # Sound effects
+│   └── images/         # Sprites & icon
+├── models/             # Trained model weights
+├── src/
+│   ├── model.py        # RPSAgentNet (DQN architecture)
+│   └── mover.py        # Entity physics & AI decision logic
+├── main.py             # Game loop
+├── train.py            # DQN training script
+├── requirements.txt
+└── run.bat             # One-click launcher (Windows)
+```
+
+---
+
+> Fork of [ethan-schaffer/LivingRPS](https://github.com/ethan-schaffer/LivingRPS) with AI enhancements and structural improvements.

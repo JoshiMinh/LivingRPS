@@ -5,7 +5,7 @@ import random
 import math
 import numpy as np
 from collections import deque
-from rps_agent_model import RPSAgentNet
+from src.model import RPSAgentNet
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,8 +27,10 @@ target_model.eval()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 loss_fn = nn.MSELoss()
 
+
 def random_pos():
     return random.randint(0, screen_w), random.randint(0, screen_h)
+
 
 def get_state(agent_type, agent_pos, threat_pos, prey_pos):
     def rel(pos):
@@ -38,12 +40,14 @@ def get_state(agent_type, agent_pos, threat_pos, prey_pos):
     type_vec[agent_type] = 1
     return rel(threat_pos) + rel(prey_pos) + type_vec
 
+
 def get_reward(agent_pos, threat_pos, prey_pos):
     d_threat = np.linalg.norm(np.array(agent_pos) - np.array(threat_pos))
-    d_prey = np.linalg.norm(np.array(agent_pos) - np.array(prey_pos))
+    d_prey   = np.linalg.norm(np.array(agent_pos) - np.array(prey_pos))
     if d_threat < 30: return -1.0
-    if d_prey < 30: return 1.0
+    if d_prey   < 30: return  1.0
     return 0.1 * (1.0 - d_prey / screen_w) - 0.1 * (1.0 - d_threat / screen_w)
+
 
 def step(action, agent_pos, threat_pos, prey_pos):
     if action == 0:
@@ -56,6 +60,7 @@ def step(action, agent_pos, threat_pos, prey_pos):
     new_x = int(agent_pos[0] + (dx / norm) * 15)
     new_y = int(agent_pos[1] + (dy / norm) * 15)
     return min(max(0, new_x), screen_w), min(max(0, new_y), screen_h)
+
 
 for ep in range(max_episodes):
     agent_type = random.randint(0, 2)
@@ -70,18 +75,19 @@ for ep in range(max_episodes):
         next_state = get_state(agent_type, new_agent_pos, threat_pos, prey_pos)
         memory.append((state, action, reward, next_state, done))
         agent_pos = new_agent_pos
-        if done: break
+        if done:
+            break
 
         if len(memory) >= batch_size:
             batch = random.sample(memory, batch_size)
             states, actions, rewards, next_states, dones = zip(*batch)
-            states = torch.tensor(states, dtype=torch.float).to(device)
+            states      = torch.tensor(states,      dtype=torch.float).to(device)
             next_states = torch.tensor(next_states, dtype=torch.float).to(device)
-            actions = torch.tensor(actions, dtype=torch.long).unsqueeze(1).to(device)
-            rewards = torch.tensor(rewards, dtype=torch.float).to(device)
-            dones = torch.tensor([bool(d) for d in dones], dtype=torch.bool).to(device)
-            q_pred = model(states).gather(1, actions).squeeze()
-            q_next = target_model(next_states).max(1)[0]
+            actions     = torch.tensor(actions,     dtype=torch.long).unsqueeze(1).to(device)
+            rewards     = torch.tensor(rewards,     dtype=torch.float).to(device)
+            dones       = torch.tensor([bool(d) for d in dones], dtype=torch.bool).to(device)
+            q_pred   = model(states).gather(1, actions).squeeze()
+            q_next   = target_model(next_states).max(1)[0]
             q_target = rewards + gamma * q_next * (~dones)
             loss = loss_fn(q_pred, q_target.detach())
             optimizer.zero_grad()
@@ -94,5 +100,5 @@ for ep in range(max_episodes):
     if (ep + 1) % 100 == 0:
         print(f"Episode {ep+1}, Epsilon: {epsilon:.3f}")
 
-torch.save(model.state_dict(), "rps_agent_model.pth")
-print("Training complete. Model saved.")
+torch.save(model.state_dict(), "models/rps_agent.pth")
+print("Training complete. Model saved to models/rps_agent.pth")
