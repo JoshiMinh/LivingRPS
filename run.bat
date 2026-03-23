@@ -1,56 +1,58 @@
 @echo off
-title LivingRPS
-color 0A
+setlocal enabledelayedexpansion
 
-echo ============================================================
-echo  LivingRPS Launcher
-echo ============================================================
-echo.
+:menu
+cls
+echo ==========================================
+echo           LivingRPS CLI Menu
+echo ==========================================
+echo [1] Run Game
+echo [2] Train Model
+echo [3] Install Dependencies
+echo [4] Exit
+echo ==========================================
+set /p opt="Pick an option (1-4): "
 
-:: Check Python is available
-where python >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Python was not found. Please install Python and add it to your PATH.
-    echo         https://www.python.org/downloads/
-    echo.
+if "%opt%"=="1" goto run_game
+if "%opt%"=="2" goto train
+if "%opt%"=="3" goto install
+if "%opt%"=="4" goto exit
+echo Invalid option, please try again.
+pause
+goto menu
+
+:run_game
+echo Starting LivingRPS...
+if not exist "src\main.py" (
+    echo [ERROR] src\main.py not found.
     pause
-    exit /b 1
+    goto menu
 )
-
-:: Check dependencies
-echo [*] Checking dependencies...
-python -c "import pygame, torch, numpy" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [*] Missing dependencies detected. Installing from requirements.txt...
-    python -m pip install -r requirements.txt
-    if %errorlevel% neq 0 (
-        echo [ERROR] Dependency installation failed.
-        pause
-        exit /b 1
-    )
-    echo.
-)
-
-:: Check trained model
-if not exist "models\rps_agent.pth" (
-    echo [*] No trained model found. Running training first...
-    echo     This may take a minute...
-    echo.
-    python train.py
-    if %errorlevel% neq 0 (
-        echo [ERROR] Training failed.
-        pause
-        exit /b 1
-    )
-    echo.
-)
-
-echo [*] Starting LivingRPS...
-echo.
+cd src
 python main.py
+cd ..
+pause
+goto menu
 
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] The game exited with an error (code %errorlevel%).
+:train
+echo Starting Training...
+if not exist "src\train.py" (
+    echo [ERROR] src\train.py not found.
     pause
+    goto menu
 )
+cd src
+python train.py
+cd ..
+pause
+goto menu
+
+:install
+echo Installing Dependencies...
+pip install -r requirements.txt
+pause
+goto menu
+
+:exit
+echo Exiting...
+exit /b

@@ -1,28 +1,36 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
+*.so
 .Python
-
-# Virtual environments
-.venv/
-venv/
 env/
-ENV/
-
-# Distribution / packaging
-dist/
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
 *.egg
 
-# Trained model weights
-models/*.pth
+# Virtual Environment
+venv/
+.venv/
+ENV/
 
-# IDE & editor
-.vscode/
+# IDEs
 .idea/
+.vscode/
+*.swp
+*.swo
 *.suo
 *.user
 *.sublime-project
@@ -33,7 +41,8 @@ models/*.pth
 Thumbs.db
 desktop.ini
 
-# Logs & temp
+# Project specific
+models/rps_agent.pth
 *.log
 *.tmp
 *.bak
